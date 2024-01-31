@@ -44,14 +44,44 @@
         <layout class="QVBoxLayout" name="verticalLayout">
          <item>
           <widget class="QTreeWidget" name="interpretedCode">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
            <property name="font">
             <font>
              <family>Courier New</family>
             </font>
            </property>
+           <property name="focusPolicy">
+            <enum>Qt::WheelFocus</enum>
+           </property>
+           <property name="editTriggers">
+            <set>QAbstractItemView::NoEditTriggers</set>
+           </property>
+           <property name="dragEnabled">
+            <bool>false</bool>
+           </property>
            <property name="verticalScrollMode">
             <enum>QAbstractItemView::ScrollPerItem</enum>
            </property>
+           <property name="indentation">
+            <number>0</number>
+           </property>
+           <property name="rootIsDecorated">
+            <bool>false</bool>
+           </property>
+           <property name="itemsExpandable">
+            <bool>true</bool>
+           </property>
+           <property name="headerHidden">
+            <bool>true</bool>
+           </property>
+           <property name="expandsOnDoubleClick">
+            <bool>false</bool>
+           </property>
+           <attribute name="headerVisible">
+            <bool>false</bool>
+           </attribute>
            <column>
             <property name="text">
              <string/>
@@ -81,14 +111,44 @@
         <layout class="QVBoxLayout" name="verticalLayout_2">
          <item>
           <widget class="QTreeWidget" name="actualCode">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
            <property name="font">
             <font>
              <family>Courier New</family>
             </font>
            </property>
+           <property name="mouseTracking">
+            <bool>false</bool>
+           </property>
+           <property name="focusPolicy">
+            <enum>Qt::WheelFocus</enum>
+           </property>
+           <property name="editTriggers">
+            <set>QAbstractItemView::NoEditTriggers</set>
+           </property>
            <property name="verticalScrollMode">
             <enum>QAbstractItemView::ScrollPerItem</enum>
            </property>
+           <property name="indentation">
+            <number>0</number>
+           </property>
+           <property name="rootIsDecorated">
+            <bool>false</bool>
+           </property>
+           <property name="itemsExpandable">
+            <bool>true</bool>
+           </property>
+           <property name="headerHidden">
+            <bool>true</bool>
+           </property>
+           <property name="expandsOnDoubleClick">
+            <bool>false</bool>
+           </property>
+           <attribute name="headerVisible">
+            <bool>false</bool>
+           </attribute>
            <column>
             <property name="text">
              <string/>
