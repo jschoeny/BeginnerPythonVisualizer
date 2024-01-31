@@ -5,6 +5,8 @@ from PySide6 import QtGui
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QTextBrowser, QSizePolicy
 
+import syntax
+
 # Important:
 # You need to run the following command to generate the ui_form.py file
 #     pyside6-uic form.ui -o ui_form.py, or
@@ -55,6 +57,7 @@ class MainWindow(QMainWindow):
         tb.setTextColor(QApplication.palette().color(QtGui.QPalette.Active, QtGui.QPalette.Text))
         tb.setTextBackgroundColor(QtGui.QColor(0, 0, 0, 0))
         tb.setStyleSheet("border: 0; padding: 0; margin: 0; background-color: transparent;")
+        syntax.PythonHighlighter(tb.document(), tb.textColor())
         return tb
 
     def set_current_line(self, line):
