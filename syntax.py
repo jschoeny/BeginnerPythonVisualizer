@@ -6,7 +6,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtGui import QColor
 
 
-def format(color, style=''):
+def format(color, back_color=None, style=''):
     """Return a QTextCharFormat with the given attributes.
     """
     if type(color) is QColor:
@@ -17,6 +17,15 @@ def format(color, style=''):
 
     _format = QtGui.QTextCharFormat()
     _format.setForeground(_color)
+
+    if back_color:
+        if type(back_color) is QColor:
+            _back_color = back_color
+        else:
+            _back_color = QColor()
+            _back_color.setNamedColor(back_color)
+        _format.setBackground(back_color)
+
     if 'bold' in style:
         _format.setFontWeight(QtGui.QFont.Weight.Bold)
     if 'italic' in style:
@@ -31,12 +40,13 @@ STYLES_LIGHT = {
     'method': format(QColor(0, 0, 123)),
     'operator': format(QColor(8, 8, 8)),
     'brace': format(QColor(8, 8, 8)),
-    'defclass': format(QColor(0, 98, 122), 'bold'),
+    'defclass': format(QColor(0, 98, 122), style='bold'),
     'string': format(QColor(6, 125, 23)),
     'string2': format(QColor(140, 140, 140)),
-    'comment': format(QColor(140, 140, 140), 'italic'),
-    'self': format(QColor(135, 16, 148), 'italic'),
+    'comment': format(QColor(140, 140, 140), style='italic'),
+    'self': format(QColor(135, 16, 148), style='italic'),
     'numbers': format(QColor(23, 80, 235)),
+    'replaced': format(QColor(200, 50, 50), back_color=QColor(200, 50, 50, 32), style='bold'),
 }
 
 STYLES_DARK = {
@@ -47,9 +57,10 @@ STYLES_DARK = {
     'defclass': format(QColor(86, 168, 245)),
     'string': format(QColor(106, 171, 115)),
     'string2': format(QColor(95, 130, 107)),
-    'comment': format(QColor(122, 126, 133), 'italic'),
-    'self': format(QColor(199, 125, 187), 'italic'),
+    'comment': format(QColor(122, 126, 133), style='italic'),
+    'self': format(QColor(199, 125, 187), style='italic'),
     'numbers': format(QColor(42, 172, 184)),
+    'replaced': format(QColor(255, 80, 80), back_color=QColor(255, 80, 80, 32), style='bold'),
 }
 
 
@@ -147,6 +158,9 @@ class PythonHighlighter(QtGui.QSyntaxHighlighter):
 
             # From '#' until a newline
             (r'#[^\n]*', 0, self.style['comment']),
+
+            # Replaced text
+            (rf'({'\u200A'}.*?{'\u200A'})', 1, self.style['replaced']),
         ]
 
         # Build a QRegExp for each pattern

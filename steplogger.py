@@ -105,7 +105,7 @@ class StepLogger(bdb.Bdb):
                 # Replace any instances of var after any equals sign
                 if current_line.strip().startswith("#"):
                     continue
-                current_line = re.sub(rf"\b{var}\b", str(value), current_line.rstrip())
+                current_line = re.sub(rf"\b{var}\b", '\u200A' + str(value) + '\u200A', current_line.rstrip())
                 if current_line != self.source_output[i].rstrip():
                     print(f"[Method] Changed line {i + 1}: {self.source_output[i].rstrip()} -> {current_line.rstrip()}")
                     self.source_output[i] = current_line + "\n"
@@ -137,7 +137,7 @@ class StepLogger(bdb.Bdb):
                 if current_line.strip().startswith(var):
                     self.main_window.updateVariable.emit((var, str(value)))
                     leading_whitespace = len(current_line) - len(current_line.lstrip())
-                    self.source_output[self.last_line - 1] = f"{leading_whitespace * ' '}{var} = {value}\n"
+                    self.source_output[self.last_line - 1] = f"{leading_whitespace * ' '}{var} = \u200A{value}\u200A\n"
                     self.line_updated_signal.emit(self.last_line - 1, self.source_output[self.last_line - 1])
                     self.local_vars[var] = value
                     self.variable_changed = True
@@ -173,7 +173,7 @@ class StepLogger(bdb.Bdb):
                         continue
                     assignment = current_line.split("=")
                     if len(assignment) == 2:
-                        assignment[1] = re.sub(rf"\b{var}\b", str(value), assignment[1].rstrip())
+                        assignment[1] = re.sub(rf"\b{var}\b", '\u200A' + str(value) + '\u200A', assignment[1].rstrip())
                         self.source_output[i] = "=".join(assignment) + "\n"
                         print(f"[Source] Changed {var} assignment for line {i + 1}: {current_line.rstrip()} -> {self.source_output[i].rstrip()}")
                 else:
@@ -185,7 +185,7 @@ class StepLogger(bdb.Bdb):
                         continue
                     match = re.search(rf"\b{var}\b", current_line)
                     if match is not None:
-                        current_line = re.sub(rf"\b{var}\b", str(value), current_line.replace('\n', ''))
+                        current_line = re.sub(rf"\b{var}\b", '\u200A' + str(value) + '\u200A', current_line.replace('\n', ''))
                         print(f"[Source] Changed {var} for line {i + 1}: {self.source_output[i].rstrip()} -> {current_line}")
                         self.source_output[i] = current_line + "\n"
                         self.line_updated_signal.emit(i, self.source_output[i])
