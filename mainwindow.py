@@ -58,21 +58,33 @@ class MainWindow(QMainWindow):
             return
         self.ui.interpretedCode.clear()
         self.ui.actualCode.clear()
-        with open(self.file_to_visualize) as f:
-            for i, line in enumerate(f):
-                # Add line as QTreeWidgetItem to interpretedCode and actualCode
-                line = line.replace('\t', '  ')
-                item = QTreeWidgetItem()
-                item.setText(0, str(i + 1))
-                item.setTextAlignment(0, Qt.AlignRight)
-                item.setFlags(Qt.ItemIsEnabled)
-                self.ui.interpretedCode.addTopLevelItem(item)
-                self.ui.interpretedCode.setItemWidget(item, 1, self.create_code_browser(line))
-                item = item.clone()
-                self.ui.actualCode.addTopLevelItem(item)
-                self.ui.actualCode.setItemWidget(item, 1, self.create_code_browser(line))
-        self.ui.statusbar.showMessage(f"Loaded file: {self.file_to_visualize}")
-        self.ui.button_start.setEnabled(True)
+        try:
+            with open(self.file_to_visualize) as f:
+                for i, line in enumerate(f):
+                    # Add line as QTreeWidgetItem to interpretedCode and actualCode
+                    line = line.replace('\t', '  ')
+                    item = QTreeWidgetItem()
+                    item.setText(0, str(i + 1))
+                    item.setTextAlignment(0, Qt.AlignRight)
+                    item.setFlags(Qt.ItemIsEnabled)
+                    self.ui.interpretedCode.addTopLevelItem(item)
+                    self.ui.interpretedCode.setItemWidget(item, 1, self.create_code_browser(line))
+                    item = item.clone()
+                    self.ui.actualCode.addTopLevelItem(item)
+                    self.ui.actualCode.setItemWidget(item, 1, self.create_code_browser(line))
+            self.ui.statusbar.showMessage(f"Loaded file: {self.file_to_visualize}")
+            self.ui.button_start.setEnabled(True)
+        except FileNotFoundError:
+            self.ui.statusbar.showMessage(f"File not found: {self.file_to_visualize}")
+            self.ui.button_start.setEnabled(False)
+            self.ui.interpretedCode.clear()
+            self.ui.actualCode.clear()
+        except Exception as e:
+            self.ui.statusbar.showMessage(f"Error loading file: {self.file_to_visualize}")
+            self.ui.button_start.setEnabled(False)
+            self.ui.interpretedCode.clear()
+            self.ui.actualCode.clear()
+            print(e)
 
     def create_code_browser(self, line):
         tb = QTextBrowser(self)
