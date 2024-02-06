@@ -3,7 +3,7 @@ import sys
 
 from PySide6 import QtGui, QtCore
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QTextBrowser, QSizePolicy
+from PySide6.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QTextBrowser, QSizePolicy, QFileDialog
 
 import syntax
 from steplogger import StepLoggerThread
@@ -22,10 +22,12 @@ class MainWindow(QMainWindow):
     updateVariable = QtCore.Signal(tuple)
     goToLine = QtCore.Signal(int)
 
-    def __init__(self, file_to_visualize, parent=None):
+    def __init__(self, file_to_visualize=None, parent=None):
         super().__init__(parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self.ui.statusbar.showMessage("No file loaded")
+        self.ui.button_start.setEnabled(False)
         self.file_to_visualize = file_to_visualize
         self.load_file()
         self.ui.interpretedCode.setColumnWidth(0, 40)
@@ -45,7 +47,15 @@ class MainWindow(QMainWindow):
         self.ui.interpretedCode.verticalScrollBar().valueChanged.connect(
             self.ui.actualCode.verticalScrollBar().setValue)
 
+    def open_file(self):
+        home_dir = QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.HomeLocation)
+        self.file_to_visualize = QFileDialog.getOpenFileName(self, "Open File", home_dir, "Python Files (*.py)")[0]
+        if self.file_to_visualize:
+            self.load_file()
+
     def load_file(self):
+        if self.file_to_visualize is None:
+            return
         self.ui.interpretedCode.clear()
         self.ui.actualCode.clear()
         with open(self.file_to_visualize) as f:
@@ -61,6 +71,8 @@ class MainWindow(QMainWindow):
                 item = item.clone()
                 self.ui.actualCode.addTopLevelItem(item)
                 self.ui.actualCode.setItemWidget(item, 1, self.create_code_browser(line))
+        self.ui.statusbar.showMessage(f"Loaded file: {self.file_to_visualize}")
+        self.ui.button_start.setEnabled(True)
 
     def create_code_browser(self, line):
         tb = QTextBrowser(self)
@@ -173,10 +185,10 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python mainwindow.py <file_to_visualize>")
-        sys.exit(1)
     app = QApplication(sys.argv)
-    widget = MainWindow(sys.argv[1])
+    if len(sys.argv) >= 2:
+        widget = MainWindow(sys.argv[1])
+    else:
+        widget = MainWindow()
     widget.show()
     sys.exit(app.exec())

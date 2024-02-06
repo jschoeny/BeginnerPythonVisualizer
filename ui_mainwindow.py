@@ -11,21 +11,25 @@
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
     QMetaObject, QObject, QPoint, QRect,
     QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-    QFont, QFontDatabase, QGradient, QIcon,
-    QImage, QKeySequence, QLinearGradient, QPainter,
-    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
+    QCursor, QFont, QFontDatabase, QGradient,
+    QIcon, QImage, QKeySequence, QLinearGradient,
+    QPainter, QPalette, QPixmap, QRadialGradient,
+    QTransform)
 from PySide6.QtWidgets import (QAbstractItemView, QApplication, QGridLayout, QGroupBox,
-    QHBoxLayout, QHeaderView, QMainWindow, QMenuBar,
-    QPushButton, QSizePolicy, QSpacerItem, QStatusBar,
-    QTextBrowser, QTreeWidget, QTreeWidgetItem, QVBoxLayout,
-    QWidget)
+    QHBoxLayout, QHeaderView, QMainWindow, QMenu,
+    QMenuBar, QPushButton, QSizePolicy, QSpacerItem,
+    QStatusBar, QTextBrowser, QTreeWidget, QTreeWidgetItem,
+    QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
         MainWindow.resize(800, 600)
+        self.actionOpen_File = QAction(MainWindow)
+        self.actionOpen_File.setObjectName(u"actionOpen_File")
+        self.actionOpen_File.setMenuRole(QAction.TextHeuristicRole)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.verticalLayout_4 = QVBoxLayout(self.centralwidget)
@@ -105,16 +109,18 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_2.addItem(self.horizontalSpacer)
 
+        self.button_load = QPushButton(self.centralwidget)
+        self.button_load.setObjectName(u"button_load")
+        self.button_load.setMinimumSize(QSize(100, 0))
+
+        self.horizontalLayout_2.addWidget(self.button_load)
+
         self.button_start = QPushButton(self.centralwidget)
         self.button_start.setObjectName(u"button_start")
         self.button_start.setEnabled(True)
         self.button_start.setMinimumSize(QSize(100, 0))
 
         self.horizontalLayout_2.addWidget(self.button_start)
-
-        self.horizontalSpacer_5 = QSpacerItem(80, 20, QSizePolicy.Minimum, QSizePolicy.Minimum)
-
-        self.horizontalLayout_2.addItem(self.horizontalSpacer_5)
 
         self.button_stop = QPushButton(self.centralwidget)
         self.button_stop.setObjectName(u"button_stop")
@@ -167,23 +173,35 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 800, 22))
+        self.menubar.setGeometry(QRect(0, 0, 800, 24))
+        self.menuFile = QMenu(self.menubar)
+        self.menuFile.setObjectName(u"menuFile")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(MainWindow)
         self.statusbar.setObjectName(u"statusbar")
         MainWindow.setStatusBar(self.statusbar)
 
+        self.menubar.addAction(self.menuFile.menuAction())
+        self.menuFile.addAction(self.actionOpen_File)
+
         self.retranslateUi(MainWindow)
         self.button_start.clicked.connect(MainWindow.run_button_clicked)
         self.button_stop.clicked.connect(MainWindow.stop_code)
+        self.button_load.clicked.connect(MainWindow.open_file)
+        self.actionOpen_File.triggered.connect(MainWindow.open_file)
 
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
+        self.actionOpen_File.setText(QCoreApplication.translate("MainWindow", u"Open File...", None))
+#if QT_CONFIG(shortcut)
+        self.actionOpen_File.setShortcut(QCoreApplication.translate("MainWindow", u"Ctrl+O", None))
+#endif // QT_CONFIG(shortcut)
         self.groupBox.setTitle(QCoreApplication.translate("MainWindow", u"Interpreted Code", None))
         self.groupBox_2.setTitle(QCoreApplication.translate("MainWindow", u"Original Code", None))
+        self.button_load.setText(QCoreApplication.translate("MainWindow", u"Load File...", None))
         self.button_start.setText(QCoreApplication.translate("MainWindow", u"Run Code", None))
         self.button_stop.setText(QCoreApplication.translate("MainWindow", u"Stop", None))
         self.groupBox_3.setTitle(QCoreApplication.translate("MainWindow", u"Output", None))
@@ -191,5 +209,6 @@ class Ui_MainWindow(object):
         ___qtreewidgetitem = self.variables.headerItem()
         ___qtreewidgetitem.setText(1, QCoreApplication.translate("MainWindow", u"Value", None));
         ___qtreewidgetitem.setText(0, QCoreApplication.translate("MainWindow", u"Variable", None));
+        self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"File", None))
     # retranslateUi
 

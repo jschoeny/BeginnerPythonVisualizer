@@ -214,7 +214,6 @@ class StepLoggerThread(QtCore.QThread):
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
-        self.file_to_visualize = main_window.file_to_visualize
         self.line_updated_signal = main_window.lineUpdated
         self.go_to_line_signal = main_window.goToLine
         self.line_finished_signal = main_window.lineFinished
@@ -224,12 +223,12 @@ class StepLoggerThread(QtCore.QThread):
         self.stdout_ = sys.stdout
 
     def run(self):
-        print(f"Running {self.file_to_visualize}")
+        print(f"Running {self.main_window.file_to_visualize}")
         self.step_logger = StepLogger(self, self.main_window)
         try:
             self.step_logger.set_trace()
             sys.stdout = self.stream_out
-            runpy.run_path(self.file_to_visualize, run_name="__main__")
+            runpy.run_path(self.main_window.file_to_visualize, run_name="__main__")
             sys.stdout = self.stdout_
         except bdb.BdbQuit:
             pass
