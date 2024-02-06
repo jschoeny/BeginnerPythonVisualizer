@@ -178,6 +178,7 @@ class MainWindow(QMainWindow):
         self.set_current_line(lineno)
 
     def code_finished(self):
+        self.ui.statusbar.showMessage("Code finished", 5000)
         self.ui.button_start.setText("Run Code")
         self.ui.button_start.setEnabled(True)
         self.ui.button_stop.setEnabled(False)
