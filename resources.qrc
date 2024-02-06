@@ -1,0 +1,16 @@
+<RCC>
+    <qresource prefix="/">
+        <file>res/icons/play_light_disabled.png</file>
+        <file>res/icons/play_light.png</file>
+        <file>res/icons/play_dark.png</file>
+        <file>res/icons/play_dark_disabled.png</file>
+        <file>res/icons/continue_dark_disabled.png</file>
+        <file>res/icons/continue_dark.png</file>
+        <file>res/icons/continue_light_disabled.png</file>
+        <file>res/icons/continue_light.png</file>
+        <file>res/icons/stop_dark_disabled.png</file>
+        <file>res/icons/stop_dark.png</file>
+        <file>res/icons/stop_light_disabled.png</file>
+        <file>res/icons/stop_light.png</file>
+    </qresource>
+</RCC>

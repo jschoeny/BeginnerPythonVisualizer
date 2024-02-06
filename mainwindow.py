@@ -2,7 +2,8 @@
 import sys
 
 from PySide6 import QtGui, QtCore
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QSize
+from PySide6.QtGui import QPalette, QIcon
 from PySide6.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QTextBrowser, QSizePolicy, QFileDialog
 
 import syntax
@@ -26,6 +27,28 @@ class MainWindow(QMainWindow):
         super().__init__(parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+
+        self.run_icon = QIcon()
+        self.continue_icon = QIcon()
+        self.stop_icon = QIcon()
+        # Check if light or dark mode
+        if QApplication.instance().palette().color(QPalette.Window).lightness() < 128:
+            self.run_icon.addFile(u":/res/icons/play_dark.png", QSize(), QIcon.Normal, QIcon.Off)
+            self.run_icon.addFile(u":/res/icons/play_dark_disabled.png", QSize(), QIcon.Disabled, QIcon.Off)
+            self.continue_icon.addFile(u":/res/icons/continue_dark.png", QSize(), QIcon.Normal, QIcon.Off)
+            self.continue_icon.addFile(u":/res/icons/continue_dark_disabled.png", QSize(), QIcon.Disabled, QIcon.Off)
+            self.stop_icon.addFile(u":/res/icons/stop_dark.png", QSize(), QIcon.Normal, QIcon.Off)
+            self.stop_icon.addFile(u":/res/icons/stop_dark_disabled.png", QSize(), QIcon.Disabled, QIcon.Off)
+        else:
+            self.run_icon.addFile(u":/res/icons/play_light.png", QSize(), QIcon.Normal, QIcon.Off)
+            self.run_icon.addFile(u":/res/icons/play_light_disabled.png", QSize(), QIcon.Disabled, QIcon.Off)
+            self.continue_icon.addFile(u":/res/icons/continue_light.png", QSize(), QIcon.Normal, QIcon.Off)
+            self.continue_icon.addFile(u":/res/icons/continue_light_disabled.png", QSize(), QIcon.Disabled, QIcon.Off)
+            self.stop_icon.addFile(u":/res/icons/stop_light.png", QSize(), QIcon.Normal, QIcon.Off)
+            self.stop_icon.addFile(u":/res/icons/stop_light_disabled.png", QSize(), QIcon.Disabled, QIcon.Off)
+        self.ui.button_start.setIcon(self.run_icon)
+        self.ui.button_stop.setIcon(self.stop_icon)
+
         self.ui.statusbar.showMessage("No file loaded")
         self.ui.button_start.setEnabled(False)
         self.file_to_visualize = file_to_visualize
@@ -162,6 +185,7 @@ class MainWindow(QMainWindow):
         self.step_logger.start()
         self.ui.console.clear()
         self.ui.button_start.setText("Next Step")
+        self.ui.button_start.setIcon(self.continue_icon)
         self.ui.button_stop.setEnabled(True)
 
     def step_code(self):
@@ -180,6 +204,7 @@ class MainWindow(QMainWindow):
     def code_finished(self):
         self.ui.statusbar.showMessage("Code finished", 5000)
         self.ui.button_start.setText("Run Code")
+        self.ui.button_start.setIcon(self.run_icon)
         self.ui.button_start.setEnabled(True)
         self.ui.button_stop.setEnabled(False)
         self.set_current_line(-1)
@@ -189,6 +214,7 @@ class MainWindow(QMainWindow):
         print(f"Error: {exctype}, {value}")
         print(tb_str)
         self.ui.button_start.setText("Run Code")
+        self.ui.button_start.setIcon(self.run_icon)
         self.ui.button_start.setEnabled(False)
         self.ui.button_stop.setEnabled(True)
 
