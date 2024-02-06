@@ -194,7 +194,7 @@ class Ui_MainWindow(object):
     # setupUi
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"Beginner Python Visualizer", None))
         self.actionOpen_File.setText(QCoreApplication.translate("MainWindow", u"Open File...", None))
 #if QT_CONFIG(shortcut)
         self.actionOpen_File.setShortcut(QCoreApplication.translate("MainWindow", u"Ctrl+O", None))
