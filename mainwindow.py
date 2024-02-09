@@ -1,5 +1,7 @@
 # This Python file uses the following encoding: utf-8
 import sys
+import logging
+import argparse
 
 from PySide6 import QtGui, QtCore
 from PySide6.QtCore import Qt, QSize
@@ -230,6 +232,14 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Beginner Python Visualizer")
+    parser.add_argument("file", nargs="?", help="Python file to visualize")
+    parser.add_argument('-d', '--debug', action='store_true', help="Enable debug logging")
+    args = parser.parse_args()
+
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG)
+
     app = QApplication(sys.argv)
     if len(sys.argv) >= 2:
         widget = MainWindow(sys.argv[1])
