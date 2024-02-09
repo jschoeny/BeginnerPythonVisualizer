@@ -216,6 +216,8 @@ class StepLogger(bdb.Bdb):
             params = current_line[current_line.index("(") + 1:current_line.index(")")]
             params = params.split(",")
             self.method_params[method_name] = params
+        elif current_line.strip().startswith("for") and " in " in current_line:
+            self.variable_changed = True
 
         lineno = -1
         if self.variable_changed:
