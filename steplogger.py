@@ -4,6 +4,7 @@ import re
 import runpy
 import sys
 import traceback
+import logging
 
 from PySide6 import QtCore
 
@@ -13,9 +14,10 @@ class StepLogger(bdb.Bdb):
         super().__init__(*args, **kwargs)
         self.parent = parent
         self.main_window = main_window
-        self.file_to_visualize = main_window.file_to_visualize
-        self.line_updated_signal = main_window.lineUpdated
-        self.line_finished_signal = main_window.lineFinished
+        if main_window:
+            self.file_to_visualize = main_window.file_to_visualize
+        else:
+            self.file_to_visualize = parent.test_file
         self.last_line = None
         self.local_vars = {}
         self.method_params = {}
@@ -25,13 +27,15 @@ class StepLogger(bdb.Bdb):
         self.next_step = False
         self.variable_changed = False
         self.methods_to_update = []
-        self.running = False
+        self.ready = False
+        self.quitting = False
 
     def user_line(self, frame):
         """This method is called when we stop or break at this line."""
         sys.stdout = self.parent.stdout_
         self.next_step = False
         self.variable_changed = False
+        self.ready = False
 
         if self.last_line is not None:
             self.update_var_changes(frame)
@@ -39,13 +43,15 @@ class StepLogger(bdb.Bdb):
                 self.update_method_variables(method_name)
             self.methods_to_update = []
             if self.variable_changed:
-                self.line_finished_signal.emit(self.last_line - 1)
-            self.last_line = None
+                self.parent.emit_line_finished(self.last_line - 1)
             # Wait for user to press Next Line button
             if not self.next_step and self.variable_changed:
                 print("Variable Changed: Waiting for user to press Next Line button")
-            while not self.next_step and self.variable_changed:
+            self.ready = True
+            while not self.next_step and self.variable_changed and not self.quitting:
                 pass
+            self.last_line = None
+            self.ready = False
             self.next_step = False
             self.variable_changed = False
 
@@ -58,13 +64,15 @@ class StepLogger(bdb.Bdb):
             self.last_line = lineno
             line = linecache.getline(filename, lineno).strip()
             print(f"About to execute {filename}:{lineno} - {line}")
-            self.line_finished_signal.emit(lineno - 1)
 
             # Wait for user to press Next Line button
             if not self.next_step:
                 print("Waiting for user to press Next Line button")
-            while not self.next_step:
+            self.ready = True
+            self.parent.emit_line_finished(lineno - 1)
+            while not self.next_step and not self.quitting:
                 pass
+            self.ready = False
             current_line = self.source[lineno - 1]
 
             # Make sure the line is not a method definition
@@ -109,7 +117,7 @@ class StepLogger(bdb.Bdb):
                 if current_line != self.source_output[i].rstrip():
                     print(f"[Method] Changed line {i + 1}: {self.source_output[i].rstrip()} -> {current_line.rstrip()}")
                     self.source_output[i] = current_line + "\n"
-                    self.line_updated_signal.emit(i, self.source_output[i])
+                    self.parent.emit_line_updated(i, self.source_output[i])
 
     def update_var_changes(self, frame):
         """Updates the difference in variable values from the last step."""
@@ -120,13 +128,15 @@ class StepLogger(bdb.Bdb):
             for param in self.method_params[method_origin]:
                 if param in current_vars:
                     self.local_vars[param] = current_vars[param]
-                    self.main_window.updateVariable.emit((param, str(current_vars[param])))
+                    if self.main_window:
+                        self.main_window.updateVariable.emit((param, str(current_vars[param])))
 
         # Remove any variables in self.local_vars that are not in current_vars
         for var in list(self.local_vars.keys()):
             if var not in current_vars:
                 self.local_vars.pop(var)
-                self.main_window.updateVariable.emit((var, None))
+                if self.main_window:
+                    self.main_window.updateVariable.emit((var, None))
 
         just_assigned = []
         for var, value in current_vars.items():
@@ -135,10 +145,13 @@ class StepLogger(bdb.Bdb):
             if var not in self.local_vars or self.local_vars[var] != value:
                 current_line = self.source[self.last_line - 1]
                 if current_line.strip().startswith(var):
-                    self.main_window.updateVariable.emit((var, str(value)))
+                    if self.main_window:
+                        self.main_window.updateVariable.emit((var, str(value)))
                     leading_whitespace = len(current_line) - len(current_line.lstrip())
                     self.source_output[self.last_line - 1] = f"{leading_whitespace * ' '}{var} = \u200A{value}\u200A\n"
-                    self.line_updated_signal.emit(self.last_line - 1, self.source_output[self.last_line - 1])
+                    print(f"[Source] Changed {var} assignment for line {self.last_line}: "
+                                  f"{current_line.rstrip()} -> {self.source_output[self.last_line - 1].rstrip()}")
+                    self.parent.emit_line_updated(self.last_line - 1, self.source_output[self.last_line - 1])
                     self.local_vars[var] = value
                     self.variable_changed = True
                     just_assigned.append(var)
@@ -149,7 +162,8 @@ class StepLogger(bdb.Bdb):
                         params = params.split(",")
                         for param in params:
                             if param.strip() == var:
-                                self.main_window.updateVariable.emit((var, str(value)))
+                                if self.main_window:
+                                    self.main_window.updateVariable.emit((var, str(value)))
                                 self.local_vars[var] = value
 
         # Find line number of `def method_origin`
@@ -168,27 +182,29 @@ class StepLogger(bdb.Bdb):
             for var, value in current_vars.items():
                 if var not in self.local_vars:
                     continue
+                skip = False
+                for v in just_assigned:
+                    if current_line.strip().startswith(v):
+                        skip = True
+                if skip:
+                    continue
                 if "=" in current_line and current_line.strip().startswith(var):
                     if "==" in current_line:
                         continue
                     assignment = current_line.split("=")
                     if len(assignment) == 2:
                         assignment[1] = re.sub(rf"\b{var}\b", '\u200A' + str(value) + '\u200A', assignment[1].rstrip())
+                        print(f"Variable {var} just assigned to {value}!")
                         self.source_output[i] = "=".join(assignment) + "\n"
-                        print(f"[Source] Changed {var} assignment for line {i + 1}: {current_line.rstrip()} -> {self.source_output[i].rstrip()}")
+                        print(f"[Source] Changed {var} assignment for line {i + 1}: "
+                                      f"{current_line.rstrip()} -> {"=".join(assignment)}")
                 else:
-                    skip = False
-                    for v in just_assigned:
-                        if current_line.strip().startswith(v):
-                            skip = True
-                    if skip:
-                        continue
                     match = re.search(rf"\b{var}\b", current_line)
                     if match is not None:
                         current_line = re.sub(rf"\b{var}\b", '\u200A' + str(value) + '\u200A', current_line.replace('\n', ''))
                         print(f"[Source] Changed {var} for line {i + 1}: {self.source_output[i].rstrip()} -> {current_line}")
                         self.source_output[i] = current_line + "\n"
-                        self.line_updated_signal.emit(i, self.source_output[i])
+                        self.parent.emit_line_updated(i, self.source_output[i])
 
         # Extract parameters from def function and check if var is one of them
         current_line = self.source[self.last_line - 1]
@@ -205,7 +221,7 @@ class StepLogger(bdb.Bdb):
             filename = frame.f_globals["__file__"]
             if filename.count(self.file_to_visualize) == 1:
                 lineno = frame.f_lineno - 1
-        self.parent.go_to_line_signal.emit(lineno)
+        self.parent.emit_go_to_line(lineno)
 
 
 class StepLoggerThread(QtCore.QThread):
@@ -214,22 +230,32 @@ class StepLoggerThread(QtCore.QThread):
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
-        self.line_updated_signal = main_window.lineUpdated
-        self.go_to_line_signal = main_window.goToLine
-        self.line_finished_signal = main_window.lineFinished
-        self.step_logger = None
+        if main_window:
+            self.line_updated_signal = main_window.lineUpdated
+            self.go_to_line_signal = main_window.goToLine
+            self.line_finished_signal = main_window.lineFinished
+            self.stream_out = EmittingStream(self.main_window.stdout)
+        else:
+            self.line_updated_signal = None
+            self.go_to_line_signal = None
+            self.line_finished_signal = None
+            self.stream_out = sys.stdout
+        self.step_logger: StepLogger | None = None
         self.wait = False
-        self.stream_out = EmittingStream(self.main_window.stdout)
         self.stdout_ = sys.stdout
+        self.test_file = None
 
     def run(self):
-        print(f"Running {self.main_window.file_to_visualize}")
         self.step_logger = StepLogger(self, self.main_window)
         try:
             self.step_logger.set_trace()
-            sys.stdout = self.stream_out
-            runpy.run_path(self.main_window.file_to_visualize, run_name="__main__")
-            sys.stdout = self.stdout_
+            if self.main_window:
+                print(f"Running {self.main_window.file_to_visualize}")
+                sys.stdout = self.stream_out
+                runpy.run_path(self.main_window.file_to_visualize, run_name="__main__")
+                sys.stdout = self.stdout_
+            elif self.test_file:
+                runpy.run_path(self.test_file, run_name="__main__")
         except bdb.BdbQuit:
             pass
         except:
@@ -244,11 +270,39 @@ class StepLoggerThread(QtCore.QThread):
         if self.step_logger is not None:
             self.step_logger.set_quit()
             self.next_step()
-        self.line_updated_signal.emit(-1, "")
+        self.emit_line_updated(-1, "")
         self.quit()
 
-    def next_step(self):
+    def next_step(self) -> tuple[int, str] | tuple[None, None]:
+        if not self.step_logger:
+            return None, None
+        while not self.step_logger.ready and not self.step_logger.quitting:
+            pass
+        self.step_logger.ready = False
         self.step_logger.next_step = True
+        if self.step_logger.last_line is None:
+            return None, None
+        return self.step_logger.last_line - 1, self.step_logger.source_output[self.step_logger.last_line - 1]
+        
+    def emit_line_updated(self, lineno, line):
+        if self.line_updated_signal:
+            self.line_updated_signal.emit(lineno, line)
+        
+    def emit_go_to_line(self, lineno):
+        if self.go_to_line_signal:
+            self.go_to_line_signal.emit(lineno)
+        
+    def emit_line_finished(self, lineno):
+        if self.line_finished_signal:
+            self.line_finished_signal.emit(lineno)
+
+    def emit_ready(self):
+        if self.line_finished_signal:
+            self.line_finished_signal.emit(-1)
+        
+    def set_test_file(self, test_file):
+        self.test_file = test_file
+        self.stream_out = None
 
 
 class EmittingStream(QtCore.QObject):
