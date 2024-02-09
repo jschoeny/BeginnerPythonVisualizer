@@ -46,7 +46,7 @@ class StepLogger(bdb.Bdb):
                 self.parent.emit_line_finished(self.last_line - 1)
             # Wait for user to press Next Line button
             if not self.next_step and self.variable_changed:
-                print("Variable Changed: Waiting for user to press Next Line button")
+                logging.debug("Variable Changed: Waiting for user to press Next Line button")
             self.ready = True
             while not self.next_step and self.variable_changed and not self.quitting:
                 pass
@@ -63,11 +63,11 @@ class StepLogger(bdb.Bdb):
             lineno = frame.f_lineno
             self.last_line = lineno
             line = linecache.getline(filename, lineno).strip()
-            print(f"About to execute {filename}:{lineno} - {line}")
+            logging.debug(f"About to execute {filename}:{lineno} - {line}")
 
             # Wait for user to press Next Line button
             if not self.next_step:
-                print("Waiting for user to press Next Line button")
+                logging.debug("Waiting for user to press Next Line button")
             self.ready = True
             self.parent.emit_line_finished(lineno - 1)
             while not self.next_step and not self.quitting:
@@ -103,19 +103,18 @@ class StepLogger(bdb.Bdb):
                 method_lineno_end = i
                 break
 
-        print(f"Updating variables for method {method_name} from line {method_lineno} to {method_lineno_end}")
+        logging.debug(f"Updating variables for method {method_name} from line {method_lineno} to {method_lineno_end}")
 
         for i in range(method_lineno + 1, method_lineno_end):
             current_line = self.source[i]
-            print(f"Updating method variables for line {i + 1}: {current_line.rstrip()}")
+            logging.debug(f"Updating method variables for line {i + 1}: {current_line.rstrip()}")
             for var, value in self.local_vars.items():
-                print(var)
                 # Replace any instances of var after any equals sign
                 if current_line.strip().startswith("#"):
                     continue
                 current_line = re.sub(rf"\b{var}\b", '\u200A' + str(value) + '\u200A', current_line.rstrip())
                 if current_line != self.source_output[i].rstrip():
-                    print(f"[Method] Changed line {i + 1}: {self.source_output[i].rstrip()} -> {current_line.rstrip()}")
+                    logging.debug(f"[Method] Changed line {i + 1}: {self.source_output[i].rstrip()} -> {current_line.rstrip()}")
                     self.source_output[i] = current_line + "\n"
                     self.parent.emit_line_updated(i, self.source_output[i])
 
@@ -149,7 +148,7 @@ class StepLogger(bdb.Bdb):
                         self.main_window.updateVariable.emit((var, str(value)))
                     leading_whitespace = len(current_line) - len(current_line.lstrip())
                     self.source_output[self.last_line - 1] = f"{leading_whitespace * ' '}{var} = \u200A{value}\u200A\n"
-                    print(f"[Source] Changed {var} assignment for line {self.last_line}: "
+                    logging.debug(f"[Source] Changed {var} assignment for line {self.last_line}: "
                                   f"{current_line.rstrip()} -> {self.source_output[self.last_line - 1].rstrip()}")
                     self.parent.emit_line_updated(self.last_line - 1, self.source_output[self.last_line - 1])
                     self.local_vars[var] = value
@@ -194,15 +193,15 @@ class StepLogger(bdb.Bdb):
                     assignment = current_line.split("=")
                     if len(assignment) == 2:
                         assignment[1] = re.sub(rf"\b{var}\b", '\u200A' + str(value) + '\u200A', assignment[1].rstrip())
-                        print(f"Variable {var} just assigned to {value}!")
+                        logging.debug(f"Variable {var} just assigned to {value}!")
                         self.source_output[i] = "=".join(assignment) + "\n"
-                        print(f"[Source] Changed {var} assignment for line {i + 1}: "
+                        logging.debug(f"[Source] Changed {var} assignment for line {i + 1}: "
                                       f"{current_line.rstrip()} -> {"=".join(assignment)}")
                 else:
                     match = re.search(rf"\b{var}\b", current_line)
                     if match is not None:
                         current_line = re.sub(rf"\b{var}\b", '\u200A' + str(value) + '\u200A', current_line.replace('\n', ''))
-                        print(f"[Source] Changed {var} for line {i + 1}: {self.source_output[i].rstrip()} -> {current_line}")
+                        logging.debug(f"[Source] Changed {var} for line {i + 1}: {self.source_output[i].rstrip()} -> {current_line}")
                         self.source_output[i] = current_line + "\n"
                         self.parent.emit_line_updated(i, self.source_output[i])
 
@@ -250,9 +249,9 @@ class StepLoggerThread(QtCore.QThread):
         try:
             self.step_logger.set_trace()
             if self.main_window:
-                print(f"Running {self.main_window.file_to_visualize}")
                 sys.stdout = self.stream_out
                 runpy.run_path(self.main_window.file_to_visualize, run_name="__main__")
+                print("\nCode finished running!")
                 sys.stdout = self.stdout_
             elif self.test_file:
                 runpy.run_path(self.test_file, run_name="__main__")
