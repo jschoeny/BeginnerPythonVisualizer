@@ -71,6 +71,8 @@ class MainWindow(QMainWindow):
         self.step_logger.error.connect(self.print_error)
         self.ui.interpretedCode.verticalScrollBar().valueChanged.connect(
             self.ui.actualCode.verticalScrollBar().setValue)
+        self.code_started = False
+        self.enable_close_button(True)
 
     def open_file(self):
         home_dir = QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.HomeLocation)
@@ -92,6 +94,7 @@ class MainWindow(QMainWindow):
                     item.setText(0, str(i + 1))
                     item.setTextAlignment(0, Qt.AlignRight)
                     item.setFlags(Qt.ItemIsEnabled)
+                    item.setData(1, Qt.UserRole, line)
                     self.ui.interpretedCode.addTopLevelItem(item)
                     self.ui.interpretedCode.setItemWidget(item, 1, self.create_code_browser(line))
                     item = item.clone()
@@ -116,6 +119,16 @@ class MainWindow(QMainWindow):
             self.ui.interpretedCode.clear()
             self.ui.actualCode.clear()
             print(e)
+
+    def reset_code(self):
+        self.ui.interpretedCode.clear()
+        for i in range(self.ui.actualCode.topLevelItemCount()):
+            item = self.ui.actualCode.topLevelItem(i).clone()
+            self.ui.interpretedCode.addTopLevelItem(item)
+            line = item.data(1, Qt.UserRole)
+            self.ui.interpretedCode.setItemWidget(
+                item, 1, self.create_code_browser(line)
+            )
 
     def create_code_browser(self, line):
         tb = QTextBrowser(self)
@@ -181,14 +194,13 @@ class MainWindow(QMainWindow):
             self.start_code()
 
     def start_code(self):
+        self.enable_close_button(False)
         self.ui.button_start.setEnabled(False)
         self.ui.button_start.repaint()
-        self.load_file()
+        self.ui.button_load.setEnabled(False)
+        self.ui.button_load.repaint()
+        self.reset_code()
         self.step_logger.start()
-        self.ui.console.clear()
-        self.ui.button_start.setText("Next Step")
-        self.ui.button_start.setIcon(self.continue_icon)
-        self.ui.button_stop.setEnabled(True)
 
     def step_code(self):
         self.ui.button_start.setEnabled(False)
@@ -200,6 +212,12 @@ class MainWindow(QMainWindow):
         self.update_line(-1, "")
 
     def line_finished(self, lineno):
+        if not self.code_started:
+            self.ui.console.clear()
+            self.ui.button_start.setText("Next Step")
+            self.ui.button_start.setIcon(self.continue_icon)
+            self.ui.button_stop.setEnabled(True)
+            self.code_started = True
         self.ui.button_start.setEnabled(True)
         self.set_current_line(lineno)
 
@@ -209,7 +227,10 @@ class MainWindow(QMainWindow):
         self.ui.button_start.setIcon(self.run_icon)
         self.ui.button_start.setEnabled(True)
         self.ui.button_stop.setEnabled(False)
+        self.ui.button_load.setEnabled(True)
+        self.enable_close_button(True)
         self.set_current_line(-1)
+        self.code_started = False
 
     def print_error(self, error):
         exctype, value, tb_str = error
@@ -229,6 +250,20 @@ class MainWindow(QMainWindow):
         if self.step_logger is not None:
             self.step_logger.stop()
         QMainWindow.closeEvent(self, event)
+
+    def enable_close_button(self, enable):
+        if enable:
+            self.setWindowFlags(QtCore.Qt.Window |
+                                QtCore.Qt.CustomizeWindowHint |
+                                QtCore.Qt.WindowMinimizeButtonHint |
+                                QtCore.Qt.WindowMaximizeButtonHint |
+                                QtCore.Qt.WindowCloseButtonHint)
+        else:
+            self.setWindowFlags(QtCore.Qt.Window |
+                                QtCore.Qt.CustomizeWindowHint |
+                                QtCore.Qt.WindowMinimizeButtonHint |
+                                QtCore.Qt.WindowMaximizeButtonHint)
+        self.show()
 
 
 if __name__ == "__main__":
