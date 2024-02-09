@@ -112,6 +112,8 @@ class StepLogger(bdb.Bdb):
                 # Replace any instances of var after any equals sign
                 if current_line.strip().startswith("#"):
                     continue
+                if type(value) is str:
+                    value = f"'{value}'"
                 current_line = re.sub(rf"\b{var}\b", '\u200A' + str(value) + '\u200A', current_line.rstrip())
                 if current_line != self.source_output[i].rstrip():
                     logging.debug(f"[Method] Changed line {i + 1}: {self.source_output[i].rstrip()} -> {current_line.rstrip()}")
@@ -187,6 +189,8 @@ class StepLogger(bdb.Bdb):
                         skip = True
                 if skip:
                     continue
+                if type(value) is str:
+                    value = f"'{value}'"
                 if "=" in current_line and current_line.strip().startswith(var):
                     if "==" in current_line:
                         continue
