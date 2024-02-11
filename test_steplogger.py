@@ -29,7 +29,7 @@ class StepLoggerTests(unittest.TestCase):
             (10, "b = \u200A'Hello World'\u200A"),
             (11, "print(\u200A'Hello World'\u200A)"),
         ]
-        self.step_logger.set_test_file('tests/test1.py')
+        self.step_logger.set_test_file('test_programs/test1.py')
         self.step_logger.start()
         _expected_index = 0
         while self.step_logger.isRunning():
@@ -77,7 +77,7 @@ class StepLoggerTests(unittest.TestCase):
             (4, "total = \u200A6\u200A"),
             (5, "print(\u200A6\u200A)"),
         ]
-        self.step_logger.set_test_file('tests/test2.py')
+        self.step_logger.set_test_file('test_programs/test2.py')
         self.step_logger.start()
         _expected_index = 0
         while self.step_logger.isRunning():
