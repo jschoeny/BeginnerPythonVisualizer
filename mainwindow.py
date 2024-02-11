@@ -268,7 +268,7 @@ class MainWindow(QMainWindow):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Beginner Python Visualizer")
-    parser.add_argument("file", nargs="?", help="Python file to visualize")
+    parser.add_argument('-f', '--file', action='store', help="Loads specified file on startup")
     parser.add_argument('-d', '--debug', action='store_true', help="Enable debug logging")
     args = parser.parse_args()
 
@@ -276,8 +276,8 @@ if __name__ == "__main__":
         logging.basicConfig(level=logging.DEBUG)
 
     app = QApplication(sys.argv)
-    if len(sys.argv) >= 2:
-        widget = MainWindow(sys.argv[1])
+    if args.file:
+        widget = MainWindow(args.file)
     else:
         widget = MainWindow()
     widget.show()
